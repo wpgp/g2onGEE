@@ -10,14 +10,45 @@ Along with that, [total population](https://code.earthengine.google.com/?asset=p
 
 ### Simple usage:
 ```js
-var year = ".2020".
+var year = "2020";
 // total population at 100-m resolution
 var total_pop = ee.ImageCollection("projects/sat-io/open-datasets/WORLDPOP/pop")
-	.filterDate(year + ".-01-01"., year + ".12-31".)
-var female_25 = ee.ImageCollection("projects/wpgp-global2/assets/pop_1km_ua")
-	.filterDate(year+".-01-01"., year + ".12-31".)
-	.select("f_25")
+	.filterDate(year + "-01-01", year + "-12-31");
+var agesex = ee.ImageCollection('projects/wpgp-global2/assets/agesex_1km_ua')
+  .filterDate(year+'-01-01', year+'-12-31').mosaic();
 ```
+
+### Visualising dependency ratio
+In this example, we calculate and display global dependency ratio in 2025. Dependency ratio is a demographic measure that compares the number of non-working individuals (children and the elderly) to the number of working-aged individuals in a population. In this case, non-working individuals fall between 0-15 and 65+ age groups.
+
+```js
+var year = '2025';
+var get_bands = function(bands){
+  bands = ee.List(bands);
+  var f = bands.map(function(b){return ee.String('f_').cat(ee.Number(b).format('%02d'))});
+  var m = bands.map(function(b){return ee.String('m_').cat(ee.Number(b).format('%02d'))});
+  return ee.List(f).cat(m);
+};
+
+var bands_young = get_bands([0,1,5,10]);
+var bands_prod = get_bands(ee.List.sequence(15,60,5));
+var bands_old = get_bands([65,70,75,80,85,90]);
+
+var agesex = ee.ImageCollection('projects/wpgp-global2/assets/agesex_1km_ua')
+  .filterDate(year+'-01-01', year+'-12-31').mosaic();
+
+var pop_young = agesex.select(bands_young).reduce('sum');
+var pop_prod = agesex.select(bands_prod).reduce('sum');
+var pop_old = agesex.select(bands_old).reduce('sum');
+var dependency = pop_young.add(pop_old).divide(pop_prod);
+
+var palettes = require('users/gena/packages:palettes');
+var palette = palettes.colorbrewer.Spectral[9];
+
+Map.addLayer(dependency, {min:0.2, max:1, palette:palette}, 'dependency');
+```
+
+![](fig/dependency.jpg)
 
 ### Suggested citation:
 Bondarenko M., Priyatikanto R., Tejedor-Garavito N., Zhang W., McKeen T., Cunningham A., Woods T., Hilton J., Cihan D., Nosatiuk B., Brinkhoff T., Tatem A., Sorichetta A.. 2025. The spatial distribution of population in 2015-2030 at a resolution of 30 arc (approximately 1km at the equator) R2025A version v1. Global Demographic Data Project - Funded by The Bill and Melinda Gates Foundation (INV-045237). WorldPop - School of Geography and Environmental Science, University of Southampton. DOI:[10.5258/SOTON/WP00845](https://doi.org/10.5258/SOTON/WP00845).
