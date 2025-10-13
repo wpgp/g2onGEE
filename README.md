@@ -12,9 +12,15 @@ Along with that, [total population](https://code.earthengine.google.com/?asset=p
 ```js
 var year = "2020";
 // total population at 100-m resolution
-var total_pop = ee.ImageCollection("projects/sat-io/open-datasets/WORLDPOP/pop")
+var total_100m = ee.ImageCollection("projects/sat-io/open-datasets/WORLDPOP/pop")
 	.filterDate(year + "-01-01", year + "-12-31");
-var agesex = ee.ImageCollection('projects/wpgp-global2/assets/agesex_1km_ua')
+
+// total population at 1-km resolution
+var total_1km = ee.ImageCollection('projects/wpgp-global2/assets/pop_1km_ua')
+  .filterDate(year+'-01-01', year+'-12-31').mosaic();
+
+// age-sex structure at 1-km resolution
+var agesex_1km = ee.ImageCollection('projects/wpgp-global2/assets/agesex_1km_ua')
   .filterDate(year+'-01-01', year+'-12-31').mosaic();
 ```
 
